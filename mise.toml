@@ -22,8 +22,13 @@ run = ["composer install", "hk install"]
 description = "Тесты HTTP-контракта приложения"
 run = "composer exec phpunit"
 
+[tasks.build]
+description = "Поставить зависимости, как стадия сборки Dockerfile"
+run = "composer install"
+
 [tasks.start]
-description = "Запустить приложение локально"
+description = "Запустить приложение встроенным сервером PHP; в образе запросы обслуживает Apache"
+depends = ["build"]
 run = 'php -S "0.0.0.0:${PORT:-3000}" app.php'
 
 [tasks.check]

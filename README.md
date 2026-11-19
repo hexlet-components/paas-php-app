@@ -54,6 +54,8 @@ docker build -t paas-php-app .
 docker run --rm -e PORT=3000 -e SERVER_MESSAGE="Первая публикация" -p 3000:3000 paas-php-app
 ```
 
+`mise run build` ставит зависимости, как стадия сборки `Dockerfile`. `mise run start` запускает приложение встроенным сервером PHP, а в образе запросы обслуживает Apache.
+
 `make <задача>` вызывает ту же задачу mise.
 
 ## Проверки
