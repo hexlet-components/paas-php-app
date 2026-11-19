@@ -1,4 +1,5 @@
 [tools]
+"aqua:carthage-software/mago" = "latest"
 betterleaks = "latest"
 hk = "2"
 jactionlint = "latest"
@@ -6,20 +7,24 @@ lychee = "latest"
 node = "26"
 "npm:@commitlint/cli" = "latest"
 "npm:@commitlint/config-conventional" = "latest"
+osv-scanner = "latest"
+php = "8.5"
 pkl = "latest"
 rumdl = "latest"
 typos = "latest"
 
 # Задачи проекта живут здесь, Makefile только проксирует make <задача> в mise run.
-# Первая настройка (AGENTS.md) ставит зависимости стека в setup перед hk install
-# и заполняет test.
 [tasks.setup]
 description = "Поставить зависимости и git-хуки"
-run = ["hk install"]
+run = ["composer install", "hk install"]
 
 [tasks.test]
-description = "Тесты стека"
-run = 'echo "test не настроен, см. AGENTS.md" >&2; exit 1'
+description = "Тесты HTTP-контракта приложения"
+run = "composer exec phpunit"
+
+[tasks.start]
+description = "Запустить приложение локально"
+run = 'php -S "0.0.0.0:${PORT:-3000}" app.php'
 
 [tasks.check]
 description = "Все проверки, тот же набор, что гоняет CI"

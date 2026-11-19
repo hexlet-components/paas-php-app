@@ -1,0 +1,26 @@
+{
+    "name": "hexlet-components/paas-php-app",
+    "description": "Учебное приложение курса «Деплой на PaaS»",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.5",
+        "ext-curl": "*",
+        "ext-mbstring": "*",
+        "sentry/sentry": "^4.38.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.4.8"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}

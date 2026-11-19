@@ -6,12 +6,31 @@ import "package://github.com/jdx/hk/releases/download/v2.8.1/hk@2.8.1#/Builtins.
 // Быстрые проверки идут на каждый коммит. Сеть и долгие шаги вынесены в all:
 // их гоняют check, pre-push и CI.
 local fast = new Mapping<String, Step> {
+  ["mago-format"] {
+    glob = List("**/*.php")
+    check = "mago format --check {{files}}"
+    fix = "mago format {{files}}"
+  }
+  ["mago-lint"] {
+    glob = List("**/*.php")
+    check = "mago lint --minimum-fail-level help {{files}}"
+    fix = "mago lint --fix {{files}}"
+  }
   ["rumdl"] = Builtins.rumdl
   ["typos"] = Builtins.typos
   ["jactionlint"] = Builtins.jactionlint
 }
 
 local all = (fast) {
+  // Анализатору нужен весь проект вместе с vendor, поэтому файлы не передаются.
+  ["mago-analyze"] {
+    glob = List("**/*.php", "composer.lock")
+    check = "mago analyze --minimum-fail-level help"
+  }
+  ["osv-scanner"] {
+    glob = List("composer.lock")
+    check = "osv-scanner scan source --lockfile composer.lock"
+  }
   ["lychee"] {
     glob = List("**/*.md")
     check = "lychee --config lychee.toml --no-progress {{files}}"

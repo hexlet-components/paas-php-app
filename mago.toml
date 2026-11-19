@@ -1,0 +1,8 @@
+php-version = "8.5"
+
+[source]
+paths = ["app.php", "tests"]
+includes = ["vendor"]
+
+[formatter]
+print-width = 120

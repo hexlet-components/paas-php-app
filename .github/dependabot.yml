@@ -17,3 +17,37 @@ updates:
       github-actions-major:
         patterns: ["*"]
         update-types: ["major"]
+  - package-ecosystem: "composer"
+    cooldown:
+      default-days: 7
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "03:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 2
+    labels: ["dependencies", "automated"]
+    groups:
+      composer-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      composer-major:
+        patterns: ["*"]
+        update-types: ["major"]
+  - package-ecosystem: "docker"
+    cooldown:
+      default-days: 7
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "03:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 2
+    labels: ["dependencies", "automated"]
+    groups:
+      docker-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      docker-major:
+        patterns: ["*"]
+        update-types: ["major"]
