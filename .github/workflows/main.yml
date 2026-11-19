@@ -18,11 +18,6 @@ concurrency:
 
 permissions: {}
 
-# mise собирает PHP из исходников, а на раннере нет нужных библиотек. PHP и
-# composer ставит setup-php, mise этот инструмент пропускает.
-env:
-  MISE_DISABLE_TOOLS: php
-
 jobs:
   build:
     if: github.repository != 'hexlet-components/component-template'
@@ -35,11 +30,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
-        with:
-          php-version: "8.5"
-          tools: composer
-          coverage: none
+      # mise собирает PHP из исходников, библиотеки для сборки ставятся из apt.
+      # Список взят из README плагина mise-plugins/vfox-php. Готовую сборку
+      # потом берёт кеш mise-action.
+      - name: Install PHP build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf bison re2c pkg-config \
+            libxml2-dev libssl-dev libicu-dev libzip-dev libonig-dev \
+            libcurl4-openssl-dev libpng-dev libjpeg-dev libfreetype6-dev \
+            libwebp-dev libgmp-dev libsodium-dev libreadline-dev libbz2-dev
 
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
