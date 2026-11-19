@@ -23,13 +23,12 @@ description = "Тесты HTTP-контракта приложения"
 run = "composer exec phpunit"
 
 [tasks.build]
-description = "Поставить зависимости, как стадия сборки Dockerfile"
-run = "composer install"
+description = "Собрать приложение, команда живёт в Makefile"
+run = "make build"
 
 [tasks.start]
-description = "Запустить приложение встроенным сервером PHP; в образе запросы обслуживает Apache"
-depends = ["build"]
-run = 'php -S "0.0.0.0:${PORT:-3000}" app.php'
+description = "Собрать и запустить приложение, команда живёт в Makefile"
+run = "make start"
 
 [tasks.check]
 description = "Все проверки, тот же набор, что гоняет CI"
