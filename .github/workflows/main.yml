@@ -18,6 +18,11 @@ concurrency:
 
 permissions: {}
 
+# mise собирает PHP из исходников, а на раннере нет нужных библиотек. PHP и
+# composer ставит setup-php, mise этот инструмент пропускает.
+env:
+  MISE_DISABLE_TOOLS: php
+
 jobs:
   build:
     if: github.repository != 'hexlet-components/component-template'
@@ -29,6 +34,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.5"
+          tools: composer
+          coverage: none
 
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
