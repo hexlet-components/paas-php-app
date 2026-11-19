@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Slim\Exception\HttpException;
+use Slim\Factory\AppFactory;
+
 require __DIR__ . '/vendor/autoload.php';
 
 const HEADING = 'Привет от Хекслета!';
@@ -17,47 +23,74 @@ function env(string $name, string $fallback): string
 }
 
 /**
- * Ответ приложения по пути запроса: статус, тип содержимого и тело.
- *
- * @return array{int, string, string}
+ * Ответ с телом и типом содержимого; к телу добавляется перевод строки.
  */
-function respond(string $path): array
+function reply(ResponseInterface $response, int $status, string $contentType, string $body): ResponseInterface
 {
-    if ($path === '/') {
-        $message = htmlspecialchars(
-            string: env(name: 'SERVER_MESSAGE', fallback: 'Hello, PaaS!'),
-            flags: ENT_QUOTES | ENT_SUBSTITUTE,
-            encoding: 'UTF-8',
-        );
+    $response->getBody()->write($body . "\n");
 
-        return [200, 'text/html; charset=utf-8', '<h1>' . HEADING . '</h1><p>' . $message . '</p>'];
-    }
-
-    if ($path === '/error') {
-        try {
-            throw new RuntimeException('Oops! Something went wrong!');
-        } catch (RuntimeException $error) {
-            \Sentry\captureException($error);
-            // Процесс PHP живёт один запрос, поэтому отправка идёт до ответа.
-            \Sentry\flush();
-
-            return [500, 'text/plain; charset=utf-8', $error->getMessage()];
-        }
-    }
-
-    return [404, 'text/plain; charset=utf-8', 'not found'];
+    return $response->withStatus($status)->withHeader('Content-Type', $contentType);
 }
 
 // Без SENTRY_DSN SDK ничего не отправляет.
 $dsn = env(name: 'SENTRY_DSN', fallback: '');
 \Sentry\init(['dsn' => $dsn === '' ? null : $dsn]);
 
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$parsedPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$path = is_string($parsedPath) ? $parsedPath : '/';
-[$status, $contentType, $body] = respond(path: $path);
+$app = AppFactory::create();
+$app->addRoutingMiddleware();
 
-http_response_code(response_code: $status);
-header(header: 'Content-Type: ' . $contentType);
-echo $body . "\n";
-error_log(message: sprintf('%s %s %d', $method, $path, $status));
+$app->get('/', static function (ServerRequestInterface $request, ResponseInterface $response): ResponseInterface {
+    $message = htmlspecialchars(
+        string: env(name: 'SERVER_MESSAGE', fallback: 'Hello, PaaS!'),
+        flags: ENT_QUOTES | ENT_SUBSTITUTE,
+        encoding: 'UTF-8',
+    );
+
+    return reply(
+        response: $response,
+        status: 200,
+        contentType: 'text/html; charset=utf-8',
+        body: '<h1>' . HEADING . '</h1><p>' . $message . '</p>',
+    );
+});
+
+$app->get('/error', static function (): never {
+    throw new RuntimeException('Oops! Something went wrong!');
+});
+
+// Ошибки отдаются простым текстом: неизвестный путь даёт 404, остальные исключения уходят в Sentry и дают 500.
+$errorMiddleware = $app->addErrorMiddleware(displayErrorDetails: false, logErrors: false, logErrorDetails: false);
+$errorMiddleware->setDefaultErrorHandler(static function (ServerRequestInterface $request, Throwable $error) use (
+    $app,
+): ResponseInterface {
+    $response = $app->getResponseFactory()->createResponse();
+    if ($error instanceof HttpException) {
+        return reply(response: $response, status: 404, contentType: 'text/plain; charset=utf-8', body: 'not found');
+    }
+
+    \Sentry\captureException($error);
+    // Процесс PHP живёт один запрос, поэтому отправка идёт до ответа.
+    \Sentry\flush();
+
+    return reply(
+        response: $response,
+        status: 500,
+        contentType: 'text/plain; charset=utf-8',
+        body: 'Oops! Something went wrong!',
+    );
+});
+
+// Добавлен последним, поэтому стоит снаружи и видит итоговый статус, в том числе ошибок.
+$app->add(static function (ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
+    $response = $handler->handle($request);
+    error_log(message: sprintf(
+        '%s %s %d',
+        $request->getMethod(),
+        $request->getUri()->getPath(),
+        $response->getStatusCode(),
+    ));
+
+    return $response;
+});
+
+$app->run();

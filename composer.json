@@ -7,7 +7,9 @@
         "php": "^8.5",
         "ext-curl": "*",
         "ext-mbstring": "*",
-        "sentry/sentry": "^4.38.0"
+        "sentry/sentry": "^4.38.0",
+        "slim/psr7": "^1.8.1",
+        "slim/slim": "^4.15.3"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.4.8"
