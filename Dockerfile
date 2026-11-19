@@ -1,5 +1,12 @@
 # Зависимости ставит отдельная стадия: в итоговый образ не попадают composer и кеш.
-FROM composer:2 AS vendor
+# Стадия собирается на том же PHP, что и приложение. В образе composer:2 своя
+# версия PHP, и на ней composer отвергает зависимости, рассчитанные на PHP 8.5.
+FROM php:8.5-cli AS vendor
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# composer распаковывает архивы пакетов через unzip.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends unzip \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-progress --prefer-dist --optimize-autoloader
