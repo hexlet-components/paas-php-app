@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Database;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -36,21 +37,30 @@ function reply(ResponseInterface $response, int $status, string $contentType, st
 $dsn = env(name: 'SENTRY_DSN', fallback: '');
 \Sentry\init(['dsn' => $dsn === '' ? null : $dsn]);
 
+// Без DATABASE_URL базы нет, и главная страница выходит без счётчика посещений. Миграции применяет bin/migrate.php
+// в команде старта, до запуска сервера.
+$databaseUrl = env(name: 'DATABASE_URL', fallback: '');
+$database = $databaseUrl === '' ? null : Database::connect($databaseUrl);
+
 $app = AppFactory::create();
 $app->addRoutingMiddleware();
 
-$app->get('/', static function (ServerRequestInterface $request, ResponseInterface $response): ResponseInterface {
+$app->get('/', static function (ServerRequestInterface $request, ResponseInterface $response) use (
+    $database,
+): ResponseInterface {
     $message = htmlspecialchars(
         string: env(name: 'SERVER_MESSAGE', fallback: 'Hello, PaaS!'),
         flags: ENT_QUOTES | ENT_SUBSTITUTE,
         encoding: 'UTF-8',
     );
+    // Сбой базы уходит в общий обработчик ошибок: событие в Sentry и ответ 500.
+    $visits = $database === null ? '' : '<p>Посещений: ' . Database::countVisit($database) . '</p>';
 
     return reply(
         response: $response,
         status: 200,
         contentType: 'text/html; charset=utf-8',
-        body: '<h1>' . HEADING . '</h1><p>' . $message . '</p>',
+        body: '<h1>' . HEADING . '</h1><p>' . $message . '</p>' . $visits,
     );
 });
 

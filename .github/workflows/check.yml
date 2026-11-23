@@ -31,7 +31,8 @@ jobs:
 
       # mise собирает PHP из исходников, библиотеки для сборки ставятся из apt.
       # Список взят из README плагина mise-plugins/vfox-php. Готовую сборку
-      # потом берёт кеш mise-action.
+      # потом берёт кеш mise-action. libpq-dev даёт pg_config, и с ним плагин
+      # собирает драйвер pdo_pgsql.
       - name: Install PHP build dependencies
         run: |
           sudo apt-get update
@@ -39,9 +40,13 @@ jobs:
             build-essential autoconf bison re2c pkg-config \
             libxml2-dev libssl-dev libicu-dev libzip-dev libonig-dev \
             libcurl4-openssl-dev libpng-dev libjpeg-dev libfreetype6-dev \
-            libwebp-dev libgmp-dev libsodium-dev libreadline-dev libbz2-dev
+            libwebp-dev libgmp-dev libsodium-dev libreadline-dev libbz2-dev \
+            libpq-dev
 
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          # Новый префикс сбрасывает кеш сборки PHP без pdo_pgsql.
+          cache_key_prefix: mise-pgsql
 
       - run: mise run setup
 

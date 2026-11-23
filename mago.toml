@@ -1,7 +1,7 @@
 php-version = "8.5"
 
 [source]
-paths = ["app.php", "tests"]
+paths = ["app.php", "bin", "migrations", "migrations.php", "migrations-db.php", "src", "tests"]
 includes = ["vendor"]
 
 [formatter]
