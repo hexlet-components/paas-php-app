@@ -70,6 +70,8 @@ final class DatabaseTest extends TestCase
             'SERVER_MESSAGE' => 'Первая публикация',
         ]);
         try {
+            // HEAD присылают проверки платформы, посещением он не считается.
+            file_get_contents($app->url('/'), context: stream_context_create(['http' => ['method' => 'HEAD']]));
             foreach ([1, 2] as $visit) {
                 $body = (string) file_get_contents($app->url('/'));
                 self::assertSame(

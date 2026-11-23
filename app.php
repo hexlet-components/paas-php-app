@@ -53,8 +53,12 @@ $app->get('/', static function (ServerRequestInterface $request, ResponseInterfa
         flags: ENT_QUOTES | ENT_SUBSTITUTE,
         encoding: 'UTF-8',
     );
-    // Сбой базы уходит в общий обработчик ошибок: событие в Sentry и ответ 500.
-    $visits = $database === null ? '' : '<p>Посещений: ' . Database::countVisit($database) . '</p>';
+    // Slim отвечает на HEAD тем же обработчиком. HEAD присылают проверки платформы при запуске, поэтому посещением
+    // считается только GET. Сбой базы уходит в общий обработчик ошибок: событие в Sentry и ответ 500.
+    $visits =
+        $database === null || $request->getMethod() !== 'GET'
+            ? ''
+            : '<p>Посещений: ' . Database::countVisit($database) . '</p>';
 
     return reply(
         response: $response,
