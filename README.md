@@ -22,11 +22,11 @@
 
 | Запрос | Ответ |
 | --- | --- |
-| `GET /` | `200`, заголовок «Привет от Хекслета!» и значение `SERVER_MESSAGE` |
+| `GET /` | `200`, заголовок «Привет от Хекслета!», значение `SERVER_MESSAGE`, с `DATABASE_URL` ещё счётчик посещений |
 | `GET /error` | `500`, событие уходит в Sentry, процесс продолжает работать |
 | другой путь | `404` |
 
-Сервер слушает `0.0.0.0` на порту из `PORT` (по умолчанию `3000`) и печатает строку `GET / 200` на каждый запрос (PHP пишет её в stderr, в контейнере она попадает в лог Apache). Sentry SDK включается переменной `SENTRY_DSN`, без неё события не отправляются. Приложение написано на микрофреймворке [Slim 4](https://www.slimframework.com/) с PSR-7 из `slim/psr7`, весь код лежит в `app.php`.
+Сервер слушает `0.0.0.0` на порту из `PORT` (по умолчанию `3000`) и печатает строку `GET / 200` на каждый запрос (PHP пишет её в stderr, в контейнере она попадает в лог Apache). Sentry SDK включается переменной `SENTRY_DSN`, без неё события не отправляются. Приложение написано на микрофреймворке [Slim 4](https://www.slimframework.com/) с PSR-7 из `slim/psr7`, маршруты лежат в `app.php`, работа с базой в `src/Database.php`.
 
 ## Публикация на Render
 
@@ -34,10 +34,18 @@
 | --- | --- |
 | Language | Docker |
 | Dockerfile Path | `./Dockerfile` |
-| Docker Command | пусто, запуск идёт по `CMD` образа (`apache2-foreground`) |
-| Environment | `PORT=3000`, `SERVER_MESSAGE`, по желанию `SENTRY_DSN` |
+| Docker Command | пусто, запуск идёт по `CMD` образа (миграции, затем `apache2-foreground`) |
+| Environment | `PORT=3000`, `SERVER_MESSAGE`, по желанию `SENTRY_DSN` и `DATABASE_URL` |
 
 Версию PHP задаёт строка `FROM php:8.5-apache` в `Dockerfile`. Зависимости Composer ставит отдельная стадия сборки.
+
+## База данных
+
+С переменной `DATABASE_URL` главная страница считает посещения в таблице `page_visits` и показывает строку «Посещений: N». Адрес имеет вид `postgresql://user:password@host:port/name`, порт необязателен. На Render это Internal Database URL базы из того же региона. Без переменной приложение работает без базы, и страница остаётся прежней.
+
+Миграции [Doctrine Migrations](https://www.doctrine-project.org/projects/migrations.html) лежат в `migrations`, настройки в `migrations.php`. Команда запуска сначала выполняет `php bin/migrate.php`, и только потом стартует сервер. Без `DATABASE_URL` скрипт ничего не делает. Doctrine Migrations сам базу не блокирует, поэтому `src/Database.php` берёт сессионную advisory-блокировку PostgreSQL на время миграций. Из двух экземпляров, запущенных разом, миграцию применяет один, а второй ждёт и видит её уже применённой. Для работы с базой PHP нужно расширение `pdo_pgsql`, в образ его ставит `Dockerfile`. Новая миграция создаётся командой `vendor/bin/doctrine-migrations generate`, адрес базы команда берёт из `DATABASE_URL`.
+
+Тесты с базой идут, когда задан `TEST_DATABASE_URL`, и очищают эту базу. Без переменной они пропускаются. В CI базу даёт сервис PostgreSQL из `main.yml`.
 
 ## Запуск
 

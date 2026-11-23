@@ -4,7 +4,9 @@
 build:
 	composer install
 
+# С DATABASE_URL сначала применяются миграции, без неё bin/migrate.php ничего не делает.
 start: build
+	php bin/migrate.php
 	php -S "0.0.0.0:$${PORT:-3000}" app.php
 
 .PHONY: build start

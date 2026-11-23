@@ -41,7 +41,7 @@ final class ServerProcess
             command: [PHP_BINARY, '-S', $host . ':' . $port, $router],
             descriptor_spec: [0 => $stdin, 1 => $stdout, 2 => $stderr],
             pipes: $pipes,
-            env_vars: array_merge(getenv(), ['SENTRY_DSN' => '', 'SERVER_MESSAGE' => ''], $env),
+            env_vars: array_merge(getenv(), ['SENTRY_DSN' => '', 'SERVER_MESSAGE' => '', 'DATABASE_URL' => ''], $env),
         );
         fclose($stdin);
         fclose($stdout);
